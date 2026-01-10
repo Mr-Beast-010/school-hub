@@ -3,20 +3,58 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import Teachers from "./pages/Teachers";
 import Classes from "./pages/Classes";
+import Attendance from "./pages/Attendance";
+import Grades from "./pages/Grades";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Simple auth check for demo
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-  return isAuthenticated ? <>{children}</> : <Navigate to="/" replace />;
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+  
+  return user ? <>{children}</> : <Navigate to="/" replace />;
 };
+
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+  
+  return user ? <Navigate to="/dashboard" replace /> : <>{children}</>;
+};
+
+const AppRoutes = () => (
+  <Routes>
+    <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
+    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+    <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
+    <Route path="/teachers" element={<ProtectedRoute><Teachers /></ProtectedRoute>} />
+    <Route path="/classes" element={<ProtectedRoute><Classes /></ProtectedRoute>} />
+    <Route path="/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
+    <Route path="/grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
+    <Route path="*" element={<NotFound />} />
+  </Routes>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -24,15 +62,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
-          <Route path="/teachers" element={<ProtectedRoute><Teachers /></ProtectedRoute>} />
-          <Route path="/classes" element={<ProtectedRoute><Classes /></ProtectedRoute>} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
