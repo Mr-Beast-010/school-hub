@@ -13,6 +13,7 @@ export interface Student {
   address: string | null;
   enrollment_date: string;
   photo_url: string | null;
+  roll_number: string | null;
   created_at: string;
   updated_at: string;
   classes?: {

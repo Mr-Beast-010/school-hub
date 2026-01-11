@@ -1,19 +1,23 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, GraduationCap, BookOpen, CalendarCheck, FileText, LogOut, School } from 'lucide-react';
+import { LayoutDashboard, Users, GraduationCap, BookOpen, CalendarCheck, FileText, LogOut, School, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-
-const menuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  { icon: Users, label: 'Students', path: '/students' },
-  { icon: GraduationCap, label: 'Teachers', path: '/teachers' },
-  { icon: BookOpen, label: 'Classes', path: '/classes' },
-  { icon: CalendarCheck, label: 'Attendance', path: '/attendance' },
-  { icon: FileText, label: 'Grades', path: '/grades' },
-];
 
 export const Sidebar = () => {
   const location = useLocation();
-  const { signOut, profile } = useAuth();
+  const { signOut, profile, isAdmin, isStudent } = useAuth();
+
+  // Build menu items based on role
+  const menuItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', show: true },
+    { icon: Users, label: 'Students', path: '/students', show: !isStudent },
+    { icon: GraduationCap, label: 'Teachers', path: '/teachers', show: !isStudent },
+    { icon: BookOpen, label: 'Classes', path: '/classes', show: true },
+    { icon: CalendarCheck, label: 'Attendance', path: '/attendance', show: true },
+    { icon: FileText, label: 'Grades', path: '/grades', show: true },
+    { icon: Shield, label: 'Admin', path: '/admin', show: isAdmin },
+  ];
+
+  const visibleMenuItems = menuItems.filter((item) => item.show);
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar flex flex-col">
@@ -31,7 +35,7 @@ export const Sidebar = () => {
 
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          {menuItems.map((item) => {
+          {visibleMenuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <li key={item.path}>
