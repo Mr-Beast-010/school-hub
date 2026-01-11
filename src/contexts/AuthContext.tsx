@@ -31,8 +31,32 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const fetchUserData = async (userId: string) => {
+    // Fetch profile and role in parallel
+    const [profileResult, roleResult] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle(),
+      supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle(),
+    ]);
+
+    if (profileResult.data) {
+      setProfile(profileResult.data as Profile);
+    }
+    if (roleResult.data) {
+      setUserRole(roleResult.data.role as AppRole);
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -42,20 +66,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Fetch profile
-          setTimeout(async () => {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
-
-            if (profileData) {
-              setProfile(profileData as Profile);
-            }
+          // Defer to avoid Supabase deadlock
+          setTimeout(() => {
+            fetchUserData(session.user.id);
           }, 0);
         } else {
           setProfile(null);
+          setUserRole(null);
         }
 
         setLoading(false);
@@ -68,17 +85,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .maybeSingle()
-          .then(({ data: profileData }) => {
-            if (profileData) {
-              setProfile(profileData as Profile);
-            }
-            setLoading(false);
-          });
+        fetchUserData(session.user.id).then(() => {
+          setLoading(false);
+        });
       } else {
         setLoading(false);
       }
@@ -111,9 +120,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSession(null);
   };
 
-  const isAdmin = profile?.role === 'admin';
-  const isTeacher = profile?.role === 'teacher';
-  const isStudent = profile?.role === 'student';
+  // Use user_roles table for role checking (more secure)
+  const isAdmin = userRole === 'admin';
+  const isTeacher = userRole === 'teacher';
+  const isStudent = userRole === 'student';
 
   // Define edit permissions per section
   const canEdit = (section: 'students' | 'teachers' | 'classes' | 'attendance' | 'grades' | 'subjects' | 'exams'): boolean => {
