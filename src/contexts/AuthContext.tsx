@@ -2,12 +2,14 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+type AppRole = 'admin' | 'teacher' | 'student';
+
 interface Profile {
   id: string;
   user_id: string;
   email: string;
   full_name: string | null;
-  role: 'admin' | 'teacher';
+  role: AppRole;
 }
 
 interface AuthContextType {
@@ -16,9 +18,12 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, role: AppRole) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  isTeacher: boolean;
+  isStudent: boolean;
+  canEdit: (section: 'students' | 'teachers' | 'classes' | 'attendance' | 'grades' | 'subjects' | 'exams') => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -87,12 +92,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error: error as Error | null };
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, role: AppRole) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: fullName, role },
         emailRedirectTo: window.location.origin,
       },
     });
@@ -107,6 +112,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const isAdmin = profile?.role === 'admin';
+  const isTeacher = profile?.role === 'teacher';
+  const isStudent = profile?.role === 'student';
+
+  // Define edit permissions per section
+  const canEdit = (section: 'students' | 'teachers' | 'classes' | 'attendance' | 'grades' | 'subjects' | 'exams'): boolean => {
+    if (isAdmin) return true; // Admins can edit everything
+    
+    if (isTeacher) {
+      // Teachers can only edit attendance and grades
+      return section === 'attendance' || section === 'grades';
+    }
+    
+    // Students cannot edit anything
+    return false;
+  };
 
   return (
     <AuthContext.Provider
@@ -119,6 +139,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         signUp,
         signOut,
         isAdmin,
+        isTeacher,
+        isStudent,
+        canEdit,
       }}
     >
       {children}

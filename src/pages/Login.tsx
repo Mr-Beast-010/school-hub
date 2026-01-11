@@ -1,16 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { School, Eye, EyeOff } from 'lucide-react';
+import { School, Eye, EyeOff, GraduationCap, BookUser } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
+
+type SignUpRole = 'teacher' | 'student';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [selectedRole, setSelectedRole] = useState<SignUpRole>('teacher');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -23,7 +27,7 @@ const Login = () => {
     setIsLoading(true);
 
     if (isSignUp) {
-      const { error } = await signUp(email, password, fullName);
+      const { error } = await signUp(email, password, fullName, selectedRole);
       if (error) {
         toast({ title: 'Sign Up Failed', description: error.message, variant: 'destructive' });
       } else {
@@ -53,7 +57,7 @@ const Login = () => {
           </div>
           <h1 className="text-4xl font-display font-bold text-primary-foreground mb-4">EduManage</h1>
           <p className="text-lg text-primary-foreground/80">
-            A complete school management system for administrators and teachers.
+            A complete school management system for administrators, teachers, and students.
           </p>
         </div>
       </div>
@@ -80,18 +84,69 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Your full name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                  className="h-12"
-                />
-              </div>
+              <>
+                {/* Role Selection */}
+                <div className="space-y-2">
+                  <Label>I am a</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRole('teacher')}
+                      className={cn(
+                        'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all',
+                        selectedRole === 'teacher'
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:border-muted-foreground'
+                      )}
+                    >
+                      <BookUser className={cn(
+                        'w-8 h-8',
+                        selectedRole === 'teacher' ? 'text-primary' : 'text-muted-foreground'
+                      )} />
+                      <span className={cn(
+                        'font-medium',
+                        selectedRole === 'teacher' ? 'text-primary' : 'text-muted-foreground'
+                      )}>
+                        Teacher
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRole('student')}
+                      className={cn(
+                        'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all',
+                        selectedRole === 'student'
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:border-muted-foreground'
+                      )}
+                    >
+                      <GraduationCap className={cn(
+                        'w-8 h-8',
+                        selectedRole === 'student' ? 'text-primary' : 'text-muted-foreground'
+                      )} />
+                      <span className={cn(
+                        'font-medium',
+                        selectedRole === 'student' ? 'text-primary' : 'text-muted-foreground'
+                      )}>
+                        Student
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="Your full name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    className="h-12"
+                  />
+                </div>
+              </>
             )}
 
             <div className="space-y-2">

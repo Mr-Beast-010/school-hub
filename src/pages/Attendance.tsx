@@ -8,8 +8,11 @@ import { useClasses } from '@/hooks/useClasses';
 import { useStudents } from '@/hooks/useStudents';
 import { useAttendanceForMonth, useBulkMarkAttendance, Attendance } from '@/hooks/useAttendance';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Attendance_Page = () => {
+  const { canEdit } = useAuth();
+  const canEditAttendance = canEdit('attendance');
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -189,14 +192,16 @@ const Attendance_Page = () => {
                     {classStudents.length} students in this class
                   </p>
                 </div>
-                <Button
-                  onClick={handleSaveAttendance}
-                  disabled={Object.keys(attendanceState).length === 0 || bulkMarkAttendance.isPending}
-                  className="gradient-primary text-primary-foreground"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  {bulkMarkAttendance.isPending ? 'Saving...' : 'Save Attendance'}
-                </Button>
+                {canEditAttendance && (
+                  <Button
+                    onClick={handleSaveAttendance}
+                    disabled={Object.keys(attendanceState).length === 0 || bulkMarkAttendance.isPending}
+                    className="gradient-primary text-primary-foreground"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {bulkMarkAttendance.isPending ? 'Saving...' : 'Save Attendance'}
+                  </Button>
+                )}
               </div>
 
               {classStudents.length === 0 ? (
@@ -223,38 +228,50 @@ const Attendance_Page = () => {
                           </div>
                         </div>
 
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant={status === 'present' ? 'default' : 'outline'}
-                            className={cn(
-                              status === 'present' && 'bg-success hover:bg-success/90 text-white'
-                            )}
-                            onClick={() => handleStatusChange(student.id, 'present')}
-                          >
-                            <Check className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant={status === 'late' ? 'default' : 'outline'}
-                            className={cn(
-                              status === 'late' && 'bg-warning hover:bg-warning/90 text-white'
-                            )}
-                            onClick={() => handleStatusChange(student.id, 'late')}
-                          >
-                            <Clock className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant={status === 'absent' ? 'default' : 'outline'}
-                            className={cn(
-                              status === 'absent' && 'bg-destructive hover:bg-destructive/90 text-white'
-                            )}
-                            onClick={() => handleStatusChange(student.id, 'absent')}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
+                        {canEditAttendance ? (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant={status === 'present' ? 'default' : 'outline'}
+                              className={cn(
+                                status === 'present' && 'bg-success hover:bg-success/90 text-white'
+                              )}
+                              onClick={() => handleStatusChange(student.id, 'present')}
+                            >
+                              <Check className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={status === 'late' ? 'default' : 'outline'}
+                              className={cn(
+                                status === 'late' && 'bg-warning hover:bg-warning/90 text-white'
+                              )}
+                              onClick={() => handleStatusChange(student.id, 'late')}
+                            >
+                              <Clock className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={status === 'absent' ? 'default' : 'outline'}
+                              className={cn(
+                                status === 'absent' && 'bg-destructive hover:bg-destructive/90 text-white'
+                              )}
+                              onClick={() => handleStatusChange(student.id, 'absent')}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className={cn(
+                            'px-3 py-1 rounded-full text-sm font-medium',
+                            status === 'present' && 'bg-success/20 text-success',
+                            status === 'late' && 'bg-warning/20 text-warning',
+                            status === 'absent' && 'bg-destructive/20 text-destructive',
+                            !status && 'bg-muted text-muted-foreground'
+                          )}>
+                            {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Not marked'}
+                          </span>
+                        )}
                       </div>
                     );
                   })}
