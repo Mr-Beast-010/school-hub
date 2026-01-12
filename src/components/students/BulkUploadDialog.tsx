@@ -77,13 +77,20 @@ export const BulkUploadDialog = () => {
         continue;
       }
 
-      // Match class by name
+      // Match class by name - flexible matching
       if (student.class_name && classes) {
-        const matchedClass = classes.find(c => 
-          `${c.name}-${c.section}`.toLowerCase() === student.class_name?.toLowerCase().replace(/\s+/g, '') ||
-          `${c.name} - ${c.section}`.toLowerCase() === student.class_name?.toLowerCase() ||
-          c.name.toLowerCase() === student.class_name?.toLowerCase()
-        );
+        const normalizedInput = student.class_name.toLowerCase().replace(/[\s\-_]+/g, '');
+        const matchedClass = classes.find(c => {
+          const fullName = `${c.name}${c.section}`.toLowerCase().replace(/[\s\-_]+/g, '');
+          const nameOnly = c.name.toLowerCase().replace(/[\s\-_]+/g, '');
+          const sectionOnly = c.section.toLowerCase().replace(/[\s\-_]+/g, '');
+          return (
+            fullName === normalizedInput ||
+            nameOnly === normalizedInput ||
+            `${nameOnly}${sectionOnly}` === normalizedInput ||
+            normalizedInput.includes(nameOnly) && normalizedInput.includes(sectionOnly)
+          );
+        });
         if (matchedClass) {
           student.class_id = matchedClass.id;
         }
