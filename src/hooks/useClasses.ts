@@ -37,19 +37,25 @@ export const useClassesWithStudentCount = () => {
 
       if (classError) throw classError;
 
-      // Get student counts for each class
-      const { data: students, error: studentError } = await supabase
-        .from('students')
-        .select('class_id');
+      // Get student counts for each class - handle permission errors gracefully
+      const countMap: Record<string, number> = {};
+      
+      try {
+        const { data: students, error: studentError } = await supabase
+          .from('students')
+          .select('class_id');
 
-      if (studentError) throw studentError;
-
-      const countMap = students.reduce((acc, s) => {
-        if (s.class_id) {
-          acc[s.class_id] = (acc[s.class_id] || 0) + 1;
+        if (!studentError && students) {
+          students.forEach((s) => {
+            if (s.class_id) {
+              countMap[s.class_id] = (countMap[s.class_id] || 0) + 1;
+            }
+          });
         }
-        return acc;
-      }, {} as Record<string, number>);
+      } catch {
+        // If we can't access students, just show 0 counts
+        console.log('Unable to fetch student counts - permission restricted');
+      }
 
       return classes.map((c) => ({
         ...c,
