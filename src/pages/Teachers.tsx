@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { useTeachers, useAddTeacher, useDeleteTeacher } from '@/hooks/useTeachers';
 import { useAuth } from '@/contexts/AuthContext';
+import { TeacherBulkUploadDialog } from '@/components/teachers/BulkUploadDialog';
 
 const Teachers = () => {
   const { data: teachers, isLoading } = useTeachers();
@@ -43,23 +44,26 @@ const Teachers = () => {
             <p className="text-muted-foreground mt-1">View and manage teaching staff</p>
           </div>
           {canEditTeachers && (
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild><Button className="gradient-primary text-primary-foreground"><Plus className="w-4 h-4 mr-2" />Add Teacher</Button></DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Add New Teacher</DialogTitle></DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                  <div className="space-y-2"><Label>Full Name</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required /></div>
-                  <div className="space-y-2"><Label>Email</Label><Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required /></div>
-                  <div className="space-y-2"><Label>Phone</Label><Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} /></div>
-                  <div className="space-y-2"><Label>Subject</Label><Input value={formData.subject} onChange={(e) => setFormData({ ...formData, subject: e.target.value })} /></div>
-                  <div className="space-y-2"><Label>Qualification</Label><Input value={formData.qualification} onChange={(e) => setFormData({ ...formData, qualification: e.target.value })} /></div>
-                  <div className="flex justify-end gap-3 pt-4">
-                    <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-                    <Button type="submit" className="gradient-primary text-primary-foreground">Add Teacher</Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+            <div className="flex gap-2">
+              <TeacherBulkUploadDialog />
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild><Button className="gradient-primary text-primary-foreground"><Plus className="w-4 h-4 mr-2" />Add Teacher</Button></DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Add New Teacher</DialogTitle></DialogHeader>
+                  <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                    <div className="space-y-2"><Label>Full Name</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required /></div>
+                    <div className="space-y-2"><Label>Email</Label><Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required /></div>
+                    <div className="space-y-2"><Label>Phone</Label><Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} /></div>
+                    <div className="space-y-2"><Label>Subject</Label><Input value={formData.subject} onChange={(e) => setFormData({ ...formData, subject: e.target.value })} /></div>
+                    <div className="space-y-2"><Label>Qualification</Label><Input value={formData.qualification} onChange={(e) => setFormData({ ...formData, qualification: e.target.value })} /></div>
+                    <div className="flex justify-end gap-3 pt-4">
+                      <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                      <Button type="submit" className="gradient-primary text-primary-foreground">Add Teacher</Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
           )}
         </div>
 
