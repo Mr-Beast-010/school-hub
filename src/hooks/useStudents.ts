@@ -35,9 +35,17 @@ export const useStudents = () => {
         `)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        // Handle permission errors gracefully
+        if (error.code === '42501' || error.message.includes('permission denied')) {
+          console.warn('Permission restricted for students table');
+          return [];
+        }
+        throw error;
+      }
       return data as Student[];
     },
+    staleTime: 30000, // Cache for 30 seconds to improve performance
   });
 };
 
