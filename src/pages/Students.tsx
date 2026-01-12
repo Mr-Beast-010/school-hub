@@ -11,6 +11,7 @@ import { useClasses } from '@/hooks/useClasses';
 import { generateStudentIdCard } from '@/lib/pdfExport';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { BulkUploadDialog } from '@/components/students/BulkUploadDialog';
 
 const Students = () => {
   const { data: students, isLoading } = useStudents();
@@ -77,10 +78,12 @@ const Students = () => {
             <p className="text-muted-foreground mt-1">Manage student enrollments and information</p>
           </div>
           {canEditStudents && (
-            <Dialog open={isAddDialogOpen} onOpenChange={(open) => { setIsAddDialogOpen(open); if (!open) { resetForm(); setEditingStudent(null); } }}>
-              <DialogTrigger asChild>
-                <Button className="gradient-primary text-primary-foreground"><Plus className="w-4 h-4 mr-2" />Add Student</Button>
-              </DialogTrigger>
+            <div className="flex gap-2">
+              <BulkUploadDialog />
+              <Dialog open={isAddDialogOpen} onOpenChange={(open) => { setIsAddDialogOpen(open); if (!open) { resetForm(); setEditingStudent(null); } }}>
+                <DialogTrigger asChild>
+                  <Button className="gradient-primary text-primary-foreground"><Plus className="w-4 h-4 mr-2" />Add Student</Button>
+                </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader><DialogTitle className="font-display">{editingStudent ? 'Edit Student' : 'Add New Student'}</DialogTitle></DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
@@ -105,7 +108,8 @@ const Students = () => {
                   </div>
                 </form>
               </DialogContent>
-            </Dialog>
+              </Dialog>
+            </div>
           )}
         </div>
 
