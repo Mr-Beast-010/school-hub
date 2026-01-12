@@ -2,10 +2,11 @@ import { useState, useRef } from 'react';
 import { Upload, FileSpreadsheet, Download, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useAddStudent } from '@/hooks/useStudents';
 import { useClasses } from '@/hooks/useClasses';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ParsedStudent {
   name: string;
@@ -24,12 +25,11 @@ export const BulkUploadDialog = () => {
   const [parsedStudents, setParsedStudents] = useState<ParsedStudent[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState({ success: 0, failed: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const addStudent = useAddStudent();
   const { data: classes } = useClasses();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const downloadTemplate = () => {
     const headers = ['name', 'email', 'roll_number', 'class_name', 'date_of_birth', 'parent_name', 'parent_phone', 'address'];
@@ -125,49 +125,54 @@ export const BulkUploadDialog = () => {
     if (parsedStudents.length === 0) return;
 
     setIsUploading(true);
-    setUploadProgress({ success: 0, failed: 0 });
+    const enrollmentDate = new Date().toISOString().split('T')[0];
 
-    let success = 0;
-    let failed = 0;
+    // Prepare all students for batch insert
+    const studentsToInsert = parsedStudents.map(student => ({
+      name: student.name,
+      email: student.email || null,
+      roll_number: student.roll_number || null,
+      class_id: student.class_id || null,
+      parent_name: student.parent_name || null,
+      parent_phone: student.parent_phone || null,
+      address: student.address || null,
+      date_of_birth: student.date_of_birth || null,
+      enrollment_date: enrollmentDate,
+      photo_url: null,
+    }));
 
-    for (const student of parsedStudents) {
-      try {
-        await addStudent.mutateAsync({
-          name: student.name,
-          email: student.email || null,
-          roll_number: student.roll_number || null,
-          class_id: student.class_id || null,
-          parent_name: student.parent_name || null,
-          parent_phone: student.parent_phone || null,
-          address: student.address || null,
-          date_of_birth: student.date_of_birth || null,
-          enrollment_date: new Date().toISOString().split('T')[0],
-          photo_url: null,
-        });
-        success++;
-      } catch (error) {
-        failed++;
-      }
-      setUploadProgress({ success, failed });
-    }
+    try {
+      const { data, error } = await supabase
+        .from('students')
+        .insert(studentsToInsert)
+        .select();
 
-    setIsUploading(false);
-    toast({
-      title: 'Bulk upload complete',
-      description: `${success} students added successfully${failed > 0 ? `, ${failed} failed` : ''}`,
-    });
+      if (error) throw error;
 
-    if (failed === 0) {
+      const successCount = data?.length || 0;
+      toast({
+        title: 'Bulk upload complete',
+        description: `${successCount} students added successfully`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['students'] });
       setParsedStudents([]);
       setIsOpen(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (error: any) {
+      toast({
+        title: 'Upload failed',
+        description: error.message || 'Failed to upload students',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
   const resetDialog = () => {
     setParsedStudents([]);
     setErrors([]);
-    setUploadProgress({ success: 0, failed: 0 });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -268,13 +273,10 @@ export const BulkUploadDialog = () => {
               {isUploading && (
                 <div className="space-y-2">
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-primary transition-all"
-                      style={{ width: `${((uploadProgress.success + uploadProgress.failed) / parsedStudents.length) * 100}%` }}
-                    />
+                    <div className="h-full bg-primary animate-pulse w-full" />
                   </div>
                   <p className="text-sm text-muted-foreground text-center">
-                    Uploading... {uploadProgress.success + uploadProgress.failed} / {parsedStudents.length}
+                    Uploading {parsedStudents.length} students...
                   </p>
                 </div>
               )}
