@@ -87,9 +87,10 @@ export const useUpdateStudent = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...student }: Partial<Student> & { id: string }) => {
+      const { classes: _classes, created_at: _createdAt, updated_at: _updatedAt, ...updateData } = student;
       const { data, error } = await supabase
         .from('students')
-        .update(student)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
