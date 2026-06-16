@@ -296,6 +296,13 @@ export type Database = {
             referencedRelation: "teachers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "subjects_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       teachers: {
@@ -354,7 +361,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      teachers_public: {
+        Row: {
+          id: string | null
+          name: string | null
+          subject: string | null
+        }
+        Insert: {
+          id?: string | null
+          name?: string | null
+          subject?: string | null
+        }
+        Update: {
+          id?: string | null
+          name?: string | null
+          subject?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       auth_user_email: { Args: never; Returns: string }
