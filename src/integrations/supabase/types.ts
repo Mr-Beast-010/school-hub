@@ -382,6 +382,10 @@ export type Database = {
     }
     Functions: {
       auth_user_email: { Args: never; Returns: string }
+      current_user_authoritative_role: {
+        Args: never
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
