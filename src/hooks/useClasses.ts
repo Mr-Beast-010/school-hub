@@ -97,6 +97,39 @@ export const useAddClass = () => {
   });
 };
 
+export const useUpdateClass = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, name, section }: { id: string; name: string; section: string }) => {
+      const { data, error } = await supabase
+        .from('classes')
+        .update({ name, section })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      toast({
+        title: 'Class Updated',
+        description: `${data.name} - ${data.section} has been updated.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
 export const useDeleteClass = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
