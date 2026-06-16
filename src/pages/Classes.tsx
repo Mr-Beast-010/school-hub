@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import { Plus, Users, Layers, Trash2 } from 'lucide-react';
+import { Plus, Users, Layers, Trash2, Pencil } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-import { useClassesWithStudentCount, useAddClass, useDeleteClass } from '@/hooks/useClasses';
+import { useClassesWithStudentCount, useAddClass, useUpdateClass, useDeleteClass } from '@/hooks/useClasses';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Classes = () => {
   const { data: classes, isLoading } = useClassesWithStudentCount();
   const addClass = useAddClass();
+  const updateClass = useUpdateClass();
   const deleteClass = useDeleteClass();
   const { canEdit } = useAuth();
 
@@ -18,6 +19,8 @@ const Classes = () => {
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', section: '' });
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editData, setEditData] = useState({ name: '', section: '' });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +28,19 @@ const Classes = () => {
     setFormData({ name: '', section: '' });
     setIsAddDialogOpen(false);
   };
+
+  const openEdit = (id: string, name: string, section: string) => {
+    setEditId(id);
+    setEditData({ name, section });
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editId) return;
+    updateClass.mutate({ id: editId, ...editData });
+    setEditId(null);
+  };
+
 
   const totalStudents = classes?.reduce((sum, c) => sum + (c.student_count || 0), 0) || 0;
 
