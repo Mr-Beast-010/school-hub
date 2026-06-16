@@ -89,7 +89,10 @@ const Classes = () => {
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center"><span className="text-primary-foreground font-bold text-lg">{classInfo.section}</span></div>
                 {canEditClasses && (
-                  <Button variant="ghost" size="icon" onClick={() => deleteClass.mutate(classInfo.id)} className="text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(classInfo.id, classInfo.name, classInfo.section)} className="text-muted-foreground hover:bg-muted"><Pencil className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => deleteClass.mutate(classInfo.id)} className="text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></Button>
+                  </div>
                 )}
               </div>
               <h3 className="text-xl font-display font-bold mb-2">{classInfo.name}</h3>
@@ -100,6 +103,21 @@ const Classes = () => {
             </div>
           ))}
         </div>
+
+        {/* Edit Class Dialog */}
+        <Dialog open={!!editId} onOpenChange={(open) => !open && setEditId(null)}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Edit Class</DialogTitle></DialogHeader>
+            <form onSubmit={handleEditSubmit} className="space-y-4 mt-4">
+              <div className="space-y-2"><Label>Class Name</Label><Input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} placeholder="e.g., Class 10" required /></div>
+              <div className="space-y-2"><Label>Section</Label><Input value={editData.section} onChange={(e) => setEditData({ ...editData, section: e.target.value })} placeholder="e.g., A" required /></div>
+              <div className="flex justify-end gap-3 pt-4">
+                <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                <Button type="submit" className="gradient-primary text-primary-foreground">Save Changes</Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
