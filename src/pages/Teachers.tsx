@@ -14,9 +14,15 @@ const Teachers = () => {
   const { data: teachers, isLoading } = useTeachers();
   const addTeacher = useAddTeacher();
   const deleteTeacher = useDeleteTeacher();
-  const { canEdit } = useAuth();
+  const { canEdit, isAdmin } = useAuth();
 
   const canEditTeachers = canEdit('teachers');
+
+  // Only admins may view the teachers directory / details
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
