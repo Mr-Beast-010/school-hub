@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { Search, Mail, Phone, BookOpen, Plus, Trash2 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Input } from '@/components/ui/input';
@@ -6,11 +7,22 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { useTeachers, useAddTeacher, useDeleteTeacher } from '@/hooks/useTeachers';
+import { useAuth } from '@/contexts/AuthContext';
+import { TeacherBulkUploadDialog } from '@/components/teachers/BulkUploadDialog';
 
 const Teachers = () => {
   const { data: teachers, isLoading } = useTeachers();
   const addTeacher = useAddTeacher();
   const deleteTeacher = useDeleteTeacher();
+  const { canEdit, isAdmin } = useAuth();
+
+  const canEditTeachers = canEdit('teachers');
+
+  // Only admins may view the teachers directory / details
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -38,23 +50,28 @@ const Teachers = () => {
             <h1 className="text-3xl font-display font-bold text-foreground">Teachers</h1>
             <p className="text-muted-foreground mt-1">View and manage teaching staff</p>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild><Button className="gradient-primary text-primary-foreground"><Plus className="w-4 h-4 mr-2" />Add Teacher</Button></DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Add New Teacher</DialogTitle></DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                <div className="space-y-2"><Label>Full Name</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required /></div>
-                <div className="space-y-2"><Label>Email</Label><Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required /></div>
-                <div className="space-y-2"><Label>Phone</Label><Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} /></div>
-                <div className="space-y-2"><Label>Subject</Label><Input value={formData.subject} onChange={(e) => setFormData({ ...formData, subject: e.target.value })} /></div>
-                <div className="space-y-2"><Label>Qualification</Label><Input value={formData.qualification} onChange={(e) => setFormData({ ...formData, qualification: e.target.value })} /></div>
-                <div className="flex justify-end gap-3 pt-4">
-                  <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-                  <Button type="submit" className="gradient-primary text-primary-foreground">Add Teacher</Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+          {canEditTeachers && (
+            <div className="flex gap-2">
+              <TeacherBulkUploadDialog />
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild><Button className="gradient-primary text-primary-foreground"><Plus className="w-4 h-4 mr-2" />Add Teacher</Button></DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Add New Teacher</DialogTitle></DialogHeader>
+                  <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                    <div className="space-y-2"><Label>Full Name</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required /></div>
+                    <div className="space-y-2"><Label>Email</Label><Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required /></div>
+                    <div className="space-y-2"><Label>Phone</Label><Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} /></div>
+                    <div className="space-y-2"><Label>Subject</Label><Input value={formData.subject} onChange={(e) => setFormData({ ...formData, subject: e.target.value })} /></div>
+                    <div className="space-y-2"><Label>Qualification</Label><Input value={formData.qualification} onChange={(e) => setFormData({ ...formData, qualification: e.target.value })} /></div>
+                    <div className="flex justify-end gap-3 pt-4">
+                      <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                      <Button type="submit" className="gradient-primary text-primary-foreground">Add Teacher</Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
         </div>
 
         <div className="form-card animate-fade-in">
@@ -72,7 +89,9 @@ const Teachers = () => {
                     <p className="text-sm text-muted-foreground">{teacher.qualification}</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => deleteTeacher.mutate(teacher.id)} className="text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></Button>
+                {canEditTeachers && (
+                  <Button variant="ghost" size="icon" onClick={() => deleteTeacher.mutate(teacher.id)} className="text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></Button>
+                )}
               </div>
               <div className="mt-4 pt-4 border-t space-y-3">
                 <div className="flex items-center gap-2 text-sm"><BookOpen className="w-4 h-4 text-primary" /><span className="font-medium">{teacher.subject || 'N/A'}</span></div>

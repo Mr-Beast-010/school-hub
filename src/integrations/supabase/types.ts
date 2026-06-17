@@ -216,6 +216,7 @@ export type Database = {
           parent_name: string | null
           parent_phone: string | null
           photo_url: string | null
+          roll_number: string | null
           updated_at: string
         }
         Insert: {
@@ -230,6 +231,7 @@ export type Database = {
           parent_name?: string | null
           parent_phone?: string | null
           photo_url?: string | null
+          roll_number?: string | null
           updated_at?: string
         }
         Update: {
@@ -244,6 +246,7 @@ export type Database = {
           parent_name?: string | null
           parent_phone?: string | null
           photo_url?: string | null
+          roll_number?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -291,6 +294,13 @@ export type Database = {
             columns: ["teacher_id"]
             isOneToOne: false
             referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subjects_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers_public"
             referencedColumns: ["id"]
           },
         ]
@@ -351,9 +361,31 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      teachers_public: {
+        Row: {
+          id: string | null
+          name: string | null
+          subject: string | null
+        }
+        Insert: {
+          id?: string | null
+          name?: string | null
+          subject?: string | null
+        }
+        Update: {
+          id?: string | null
+          name?: string | null
+          subject?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      auth_user_email: { Args: never; Returns: string }
+      current_user_authoritative_role: {
+        Args: never
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -361,9 +393,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      teacher_owns_class: { Args: { _class_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "teacher"
+      app_role: "admin" | "teacher" | "student"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -491,7 +524,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "teacher"],
+      app_role: ["admin", "teacher", "student"],
     },
   },
 } as const

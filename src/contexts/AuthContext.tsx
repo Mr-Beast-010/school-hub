@@ -2,12 +2,14 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+type AppRole = 'admin' | 'teacher' | 'student';
+
 interface Profile {
   id: string;
   user_id: string;
   email: string;
   full_name: string | null;
-  role: 'admin' | 'teacher';
+  role: AppRole;
 }
 
 interface AuthContextType {
@@ -16,9 +18,12 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, role: AppRole) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  isTeacher: boolean;
+  isStudent: boolean;
+  canEdit: (section: 'students' | 'teachers' | 'classes' | 'attendance' | 'grades' | 'subjects' | 'exams') => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,8 +31,32 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const fetchUserData = async (userId: string) => {
+    // Fetch profile and role in parallel
+    const [profileResult, roleResult] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle(),
+      supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle(),
+    ]);
+
+    if (profileResult.data) {
+      setProfile(profileResult.data as Profile);
+    }
+    if (roleResult.data) {
+      setUserRole(roleResult.data.role as AppRole);
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -37,20 +66,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Fetch profile
-          setTimeout(async () => {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
-
-            if (profileData) {
-              setProfile(profileData as Profile);
-            }
+          // Defer to avoid Supabase deadlock
+          setTimeout(() => {
+            fetchUserData(session.user.id);
           }, 0);
         } else {
           setProfile(null);
+          setUserRole(null);
         }
 
         setLoading(false);
@@ -63,17 +85,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .maybeSingle()
-          .then(({ data: profileData }) => {
-            if (profileData) {
-              setProfile(profileData as Profile);
-            }
-            setLoading(false);
-          });
+        fetchUserData(session.user.id).then(() => {
+          setLoading(false);
+        });
       } else {
         setLoading(false);
       }
@@ -87,12 +101,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error: error as Error | null };
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, role: AppRole) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: fullName, role },
         emailRedirectTo: window.location.origin,
       },
     });
@@ -106,7 +120,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSession(null);
   };
 
-  const isAdmin = profile?.role === 'admin';
+  // Use user_roles table for role checking (more secure)
+  const isAdmin = userRole === 'admin';
+  const isTeacher = userRole === 'teacher';
+  const isStudent = userRole === 'student';
+
+  // Define edit permissions per section
+  const canEdit = (section: 'students' | 'teachers' | 'classes' | 'attendance' | 'grades' | 'subjects' | 'exams'): boolean => {
+    if (isAdmin) return true; // Admins can edit everything
+    
+    if (isTeacher) {
+      // Teachers can only edit attendance and grades
+      return section === 'attendance' || section === 'grades';
+    }
+    
+    // Students cannot edit anything
+    return false;
+  };
 
   return (
     <AuthContext.Provider
@@ -119,6 +149,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         signUp,
         signOut,
         isAdmin,
+        isTeacher,
+        isStudent,
+        canEdit,
       }}
     >
       {children}

@@ -13,6 +13,7 @@ export interface Student {
   address: string | null;
   enrollment_date: string;
   photo_url: string | null;
+  roll_number: string | null;
   created_at: string;
   updated_at: string;
   classes?: {
@@ -34,9 +35,17 @@ export const useStudents = () => {
         `)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        // Handle permission errors gracefully
+        if (error.code === '42501' || error.message.includes('permission denied')) {
+          console.warn('Permission restricted for students table');
+          return [];
+        }
+        throw error;
+      }
       return data as Student[];
     },
+    staleTime: 30000, // Cache for 30 seconds to improve performance
   });
 };
 
@@ -78,9 +87,10 @@ export const useUpdateStudent = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...student }: Partial<Student> & { id: string }) => {
+      const { classes: _classes, created_at: _createdAt, updated_at: _updatedAt, ...updateData } = student;
       const { data, error } = await supabase
         .from('students')
-        .update(student)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();

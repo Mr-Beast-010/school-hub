@@ -1,19 +1,26 @@
 import { useState } from 'react';
-import { Plus, Users, Layers, Trash2 } from 'lucide-react';
+import { Plus, Users, Layers, Trash2, Pencil } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-import { useClassesWithStudentCount, useAddClass, useDeleteClass } from '@/hooks/useClasses';
+import { useClassesWithStudentCount, useAddClass, useUpdateClass, useDeleteClass } from '@/hooks/useClasses';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Classes = () => {
   const { data: classes, isLoading } = useClassesWithStudentCount();
   const addClass = useAddClass();
+  const updateClass = useUpdateClass();
   const deleteClass = useDeleteClass();
+  const { canEdit } = useAuth();
+
+  const canEditClasses = canEdit('classes');
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', section: '' });
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editData, setEditData] = useState({ name: '', section: '' });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,6 +28,19 @@ const Classes = () => {
     setFormData({ name: '', section: '' });
     setIsAddDialogOpen(false);
   };
+
+  const openEdit = (id: string, name: string, section: string) => {
+    setEditId(id);
+    setEditData({ name, section });
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editId) return;
+    updateClass.mutate({ id: editId, ...editData });
+    setEditId(null);
+  };
+
 
   const totalStudents = classes?.reduce((sum, c) => sum + (c.student_count || 0), 0) || 0;
 
@@ -34,20 +54,22 @@ const Classes = () => {
             <h1 className="text-3xl font-display font-bold text-foreground">Classes</h1>
             <p className="text-muted-foreground mt-1">Manage classes and sections</p>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild><Button className="gradient-primary text-primary-foreground"><Plus className="w-4 h-4 mr-2" />Add Class</Button></DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Add New Class</DialogTitle></DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                <div className="space-y-2"><Label>Class Name</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Class 10" required /></div>
-                <div className="space-y-2"><Label>Section</Label><Input value={formData.section} onChange={(e) => setFormData({ ...formData, section: e.target.value })} placeholder="e.g., A" required /></div>
-                <div className="flex justify-end gap-3 pt-4">
-                  <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-                  <Button type="submit" className="gradient-primary text-primary-foreground">Add Class</Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+          {canEditClasses && (
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild><Button className="gradient-primary text-primary-foreground"><Plus className="w-4 h-4 mr-2" />Add Class</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Add New Class</DialogTitle></DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                  <div className="space-y-2"><Label>Class Name</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Class 10" required /></div>
+                  <div className="space-y-2"><Label>Section</Label><Input value={formData.section} onChange={(e) => setFormData({ ...formData, section: e.target.value })} placeholder="e.g., A" required /></div>
+                  <div className="flex justify-end gap-3 pt-4">
+                    <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                    <Button type="submit" className="gradient-primary text-primary-foreground">Add Class</Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
@@ -66,7 +88,12 @@ const Classes = () => {
             <div key={classInfo.id} className="form-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center"><span className="text-primary-foreground font-bold text-lg">{classInfo.section}</span></div>
-                <Button variant="ghost" size="icon" onClick={() => deleteClass.mutate(classInfo.id)} className="text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></Button>
+                {canEditClasses && (
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(classInfo.id, classInfo.name, classInfo.section)} className="text-muted-foreground hover:bg-muted"><Pencil className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => deleteClass.mutate(classInfo.id)} className="text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></Button>
+                  </div>
+                )}
               </div>
               <h3 className="text-xl font-display font-bold mb-2">{classInfo.name}</h3>
               <div className="space-y-2 pt-4 border-t">
@@ -76,6 +103,21 @@ const Classes = () => {
             </div>
           ))}
         </div>
+
+        {/* Edit Class Dialog */}
+        <Dialog open={!!editId} onOpenChange={(open) => !open && setEditId(null)}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Edit Class</DialogTitle></DialogHeader>
+            <form onSubmit={handleEditSubmit} className="space-y-4 mt-4">
+              <div className="space-y-2"><Label>Class Name</Label><Input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} placeholder="e.g., Class 10" required /></div>
+              <div className="space-y-2"><Label>Section</Label><Input value={editData.section} onChange={(e) => setEditData({ ...editData, section: e.target.value })} placeholder="e.g., A" required /></div>
+              <div className="flex justify-end gap-3 pt-4">
+                <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                <Button type="submit" className="gradient-primary text-primary-foreground">Save Changes</Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
