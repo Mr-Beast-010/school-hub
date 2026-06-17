@@ -10,7 +10,7 @@ export const Sidebar = () => {
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', show: true },
     { icon: Users, label: 'Students', path: '/students', show: !isStudent },
-    { icon: GraduationCap, label: 'Teachers', path: '/teachers', show: !isStudent },
+    { icon: GraduationCap, label: 'Teachers', path: '/teachers', show: isAdmin },
     { icon: BookOpen, label: 'Classes', path: '/classes', show: true },
     { icon: CalendarCheck, label: 'Attendance', path: '/attendance', show: true },
     { icon: FileText, label: 'Grades', path: '/grades', show: true },
