@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { Search, Mail, Phone, BookOpen, Plus, Trash2 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Input } from '@/components/ui/input';
@@ -13,9 +14,15 @@ const Teachers = () => {
   const { data: teachers, isLoading } = useTeachers();
   const addTeacher = useAddTeacher();
   const deleteTeacher = useDeleteTeacher();
-  const { canEdit } = useAuth();
+  const { canEdit, isAdmin } = useAuth();
 
   const canEditTeachers = canEdit('teachers');
+
+  // Only admins may view the teachers directory / details
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
