@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { Search, Mail, Phone, BookOpen, Plus, Trash2 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Input } from '@/components/ui/input';
