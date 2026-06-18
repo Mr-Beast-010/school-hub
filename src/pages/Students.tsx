@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, Search, Edit, Trash2, Eye, IdCard } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, IdCard, KeyRound } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,9 +21,26 @@ const Students = () => {
   const updateStudent = useUpdateStudent();
   const deleteStudent = useDeleteStudent();
   const { toast } = useToast();
-  const { canEdit } = useAuth();
+  const { canEdit, isAdmin } = useAuth();
 
   const canEditStudents = canEdit('students');
+  const [isProvisioning, setIsProvisioning] = useState(false);
+
+  const handleCreateLogins = async () => {
+    setIsProvisioning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-student-accounts');
+      if (error) throw error;
+      toast({
+        title: 'Student logins created',
+        description: `${data.created} created, ${data.skipped} already existed. Default password: Student123`,
+      });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message ?? String(e), variant: 'destructive' });
+    } finally {
+      setIsProvisioning(false);
+    }
+  };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -79,6 +97,12 @@ const Students = () => {
           </div>
           {canEditStudents && (
             <div className="flex gap-2">
+              {isAdmin && (
+                <Button variant="outline" onClick={handleCreateLogins} disabled={isProvisioning}>
+                  <KeyRound className="w-4 h-4 mr-2" />
+                  {isProvisioning ? 'Creating...' : 'Create Logins'}
+                </Button>
+              )}
               <BulkUploadDialog />
               <Dialog open={isAddDialogOpen} onOpenChange={(open) => { setIsAddDialogOpen(open); if (!open) { resetForm(); setEditingStudent(null); } }}>
                 <DialogTrigger asChild>
