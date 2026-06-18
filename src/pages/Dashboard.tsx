@@ -8,7 +8,7 @@ import { useTeachers } from '@/hooks/useTeachers';
 import { useClasses } from '@/hooks/useClasses';
 
 const Dashboard = () => {
-  const { profile } = useAuth();
+  const { profile, isAdmin } = useAuth();
   const { data: students } = useStudents();
   const { data: teachers } = useTeachers();
   const { data: classes } = useClasses();
