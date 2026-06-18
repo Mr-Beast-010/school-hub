@@ -23,7 +23,9 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard title="Total Students" value={students?.length || 0} icon={Users} gradient="primary" subtitle="Enrolled" />
-          <StatCard title="Total Teachers" value={teachers?.length || 0} icon={GraduationCap} gradient="accent" subtitle="Active staff" />
+          {isAdmin && (
+            <StatCard title="Total Teachers" value={teachers?.length || 0} icon={GraduationCap} gradient="accent" subtitle="Active staff" />
+          )}
           <StatCard title="Total Classes" value={classes?.length || 0} icon={BookOpen} gradient="success" subtitle="Sections" />
           <StatCard title="Attendance" value="--" icon={Calendar} gradient="warning" subtitle="Check attendance" />
         </div>
