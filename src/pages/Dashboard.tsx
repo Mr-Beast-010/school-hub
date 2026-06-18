@@ -50,25 +50,28 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="form-card animate-fade-in">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-display font-semibold">Teaching Staff</h2>
-              <Link to="/teachers" className="text-sm text-primary hover:underline">View all</Link>
-            </div>
-            <div className="space-y-4">
-              {teachers?.slice(0, 5).map((teacher) => (
-                <div key={teacher.id} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                  <div className="w-10 h-10 rounded-full gradient-accent flex items-center justify-center text-primary-foreground font-semibold">{teacher.name.charAt(0)}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{teacher.name}</p>
-                    <p className="text-sm text-muted-foreground">{teacher.subject}</p>
+          {isAdmin && (
+            <div className="form-card animate-fade-in">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-display font-semibold">Teaching Staff</h2>
+                <Link to="/teachers" className="text-sm text-primary hover:underline">View all</Link>
+              </div>
+              <div className="space-y-4">
+                {teachers?.slice(0, 5).map((teacher) => (
+                  <div key={teacher.id} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                    <div className="w-10 h-10 rounded-full gradient-accent flex items-center justify-center text-primary-foreground font-semibold">{teacher.name.charAt(0)}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{teacher.name}</p>
+                      <p className="text-sm text-muted-foreground">{teacher.subject}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-              {(!teachers || teachers.length === 0) && <p className="text-center py-4 text-muted-foreground">No teachers yet.</p>}
+                ))}
+                {(!teachers || teachers.length === 0) && <p className="text-center py-4 text-muted-foreground">No teachers yet.</p>}
+              </div>
             </div>
-          </div>
+          )}
         </div>
+
 
         <div className="form-card animate-fade-in">
           <h2 className="text-lg font-display font-semibold mb-6">Quick Actions</h2>
