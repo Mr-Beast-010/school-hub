@@ -97,6 +97,12 @@ const Students = () => {
           </div>
           {canEditStudents && (
             <div className="flex gap-2">
+              {isAdmin && (
+                <Button variant="outline" onClick={handleCreateLogins} disabled={isProvisioning}>
+                  <KeyRound className="w-4 h-4 mr-2" />
+                  {isProvisioning ? 'Creating...' : 'Create Logins'}
+                </Button>
+              )}
               <BulkUploadDialog />
               <Dialog open={isAddDialogOpen} onOpenChange={(open) => { setIsAddDialogOpen(open); if (!open) { resetForm(); setEditingStudent(null); } }}>
                 <DialogTrigger asChild>
