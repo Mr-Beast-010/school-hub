@@ -21,9 +21,26 @@ const Students = () => {
   const updateStudent = useUpdateStudent();
   const deleteStudent = useDeleteStudent();
   const { toast } = useToast();
-  const { canEdit } = useAuth();
+  const { canEdit, isAdmin } = useAuth();
 
   const canEditStudents = canEdit('students');
+  const [isProvisioning, setIsProvisioning] = useState(false);
+
+  const handleCreateLogins = async () => {
+    setIsProvisioning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-student-accounts');
+      if (error) throw error;
+      toast({
+        title: 'Student logins created',
+        description: `${data.created} created, ${data.skipped} already existed. Default password: Student123`,
+      });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message ?? String(e), variant: 'destructive' });
+    } finally {
+      setIsProvisioning(false);
+    }
+  };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
