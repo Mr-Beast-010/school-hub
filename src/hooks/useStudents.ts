@@ -66,6 +66,12 @@ export const useAddStudent = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
+      // Auto-create a login account for the new student (password: Student123)
+      if (data?.email) {
+        supabase.functions
+          .invoke('create-student-accounts', { body: { email: data.email } })
+          .catch(() => {/* non-blocking */});
+      }
       toast({
         title: 'Student Added',
         description: `${data.name} has been enrolled successfully.`,

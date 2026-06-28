@@ -8,7 +8,7 @@ import { useTeachers } from '@/hooks/useTeachers';
 import { useClasses } from '@/hooks/useClasses';
 
 const Dashboard = () => {
-  const { profile } = useAuth();
+  const { profile, isAdmin } = useAuth();
   const { data: students } = useStudents();
   const { data: teachers } = useTeachers();
   const { data: classes } = useClasses();
@@ -23,7 +23,9 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard title="Total Students" value={students?.length || 0} icon={Users} gradient="primary" subtitle="Enrolled" />
-          <StatCard title="Total Teachers" value={teachers?.length || 0} icon={GraduationCap} gradient="accent" subtitle="Active staff" />
+          {isAdmin && (
+            <StatCard title="Total Teachers" value={teachers?.length || 0} icon={GraduationCap} gradient="accent" subtitle="Active staff" />
+          )}
           <StatCard title="Total Classes" value={classes?.length || 0} icon={BookOpen} gradient="success" subtitle="Sections" />
           <StatCard title="Attendance" value="--" icon={Calendar} gradient="warning" subtitle="Check attendance" />
         </div>
@@ -48,25 +50,28 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="form-card animate-fade-in">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-display font-semibold">Teaching Staff</h2>
-              <Link to="/teachers" className="text-sm text-primary hover:underline">View all</Link>
-            </div>
-            <div className="space-y-4">
-              {teachers?.slice(0, 5).map((teacher) => (
-                <div key={teacher.id} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                  <div className="w-10 h-10 rounded-full gradient-accent flex items-center justify-center text-primary-foreground font-semibold">{teacher.name.charAt(0)}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{teacher.name}</p>
-                    <p className="text-sm text-muted-foreground">{teacher.subject}</p>
+          {isAdmin && (
+            <div className="form-card animate-fade-in">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-display font-semibold">Teaching Staff</h2>
+                <Link to="/teachers" className="text-sm text-primary hover:underline">View all</Link>
+              </div>
+              <div className="space-y-4">
+                {teachers?.slice(0, 5).map((teacher) => (
+                  <div key={teacher.id} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                    <div className="w-10 h-10 rounded-full gradient-accent flex items-center justify-center text-primary-foreground font-semibold">{teacher.name.charAt(0)}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{teacher.name}</p>
+                      <p className="text-sm text-muted-foreground">{teacher.subject}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-              {(!teachers || teachers.length === 0) && <p className="text-center py-4 text-muted-foreground">No teachers yet.</p>}
+                ))}
+                {(!teachers || teachers.length === 0) && <p className="text-center py-4 text-muted-foreground">No teachers yet.</p>}
+              </div>
             </div>
-          </div>
+          )}
         </div>
+
 
         <div className="form-card animate-fade-in">
           <h2 className="text-lg font-display font-semibold mb-6">Quick Actions</h2>
